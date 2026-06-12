@@ -7,3 +7,6 @@ __pycache__/
 .pytest_cache/
 dist/
 *.egg-info/
+# 자체 색인 SQLite 파일 (corgi-crawl 산출물)
+*.db
+corgi_index.db*

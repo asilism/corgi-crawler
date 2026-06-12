@@ -30,6 +30,8 @@ class CrawledPage:
     markdown: str
     image_urls: tuple[str, ...] = ()
     favicon: str | None = None
+    # 사이트 크롤링(BFS)에서 다음에 방문할 후보 링크. extract 엔드포인트는 무시한다.
+    links: tuple[str, ...] = ()
 
 
 class SearchProvider(Protocol):

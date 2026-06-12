@@ -1,6 +1,7 @@
 """애플리케이션 설정. Spring의 @ConfigurationProperties에 대응."""
 
 from functools import lru_cache
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -18,11 +19,26 @@ class Settings(BaseSettings):
     )
     max_concurrent_fetches: int = 8
 
+    # 검색 백엔드: "duckduckgo"(외부 빌림) 또는 "index"(자체 색인 조회)
+    search_backend: Literal["duckduckgo", "index"] = "duckduckgo"
+    index_path: str = "corgi_index.db"
+
+    # corgi-crawl 배치 설정
+    crawl_seeds: str = ""  # 쉼표로 구분된 시드 URL
+    crawl_max_depth: int = 2
+    crawl_max_pages: int = 100
+    crawl_delay: float = 0.5  # 같은 사이트에 대한 예의상 요청 간격(초)
+    crawl_respect_robots: bool = True
+
     @property
     def allowed_api_keys(self) -> frozenset[str]:
         # pydantic-settings는 list 필드에 JSON 형식을 요구하므로,
         # 운영에서 다루기 쉬운 쉼표 구분 문자열을 받아 여기서 파싱한다.
         return frozenset(key.strip() for key in self.api_keys.split(",") if key.strip())
+
+    @property
+    def crawl_seed_list(self) -> list[str]:
+        return [seed.strip() for seed in self.crawl_seeds.split(",") if seed.strip()]
 
 
 # lru_cache: 최초 호출 시 한 번만 생성되는 싱글톤 효과 (Spring의 싱글톤 빈과 유사)

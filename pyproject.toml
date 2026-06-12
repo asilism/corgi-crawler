@@ -22,6 +22,10 @@ dev = [
     "mypy>=1.11",
 ]
 
+[project.scripts]
+# 오프라인 크롤·색인 배치: `uv run corgi-crawl`
+corgi-crawl = "corgi.indexing.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

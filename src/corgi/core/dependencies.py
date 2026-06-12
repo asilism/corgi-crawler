@@ -13,6 +13,7 @@ from corgi.core.config import Settings, get_settings
 from corgi.providers.base import Crawler, SearchProvider
 from corgi.providers.duckduckgo import DuckDuckGoSearchProvider
 from corgi.providers.httpx_crawler import HttpxCrawler
+from corgi.providers.sqlite_index import SqliteIndex
 from corgi.services.extract_service import ExtractService
 from corgi.services.search_service import SearchService
 
@@ -30,7 +31,11 @@ def get_http_client(request: Request) -> httpx.AsyncClient:
 HttpClientDep = Annotated[httpx.AsyncClient, Depends(get_http_client)]
 
 
-def get_search_provider(client: HttpClientDep) -> SearchProvider:
+def get_search_provider(client: HttpClientDep, settings: SettingsDep) -> SearchProvider:
+    # search_backend 설정에 따라 외부 검색(DDG) 또는 자체 인덱스를 주입한다.
+    # 둘 다 SearchProvider 프로토콜을 만족하므로 라우터/서비스는 영향받지 않는다.
+    if settings.search_backend == "index":
+        return SqliteIndex(settings.index_path)
     return DuckDuckGoSearchProvider(client)
 
 

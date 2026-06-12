@@ -29,9 +29,9 @@ PAGE_HTML = """
     <script>tracking();</script>
   </head>
   <body>
-    <nav>Home | About</nav>
+    <nav><a href="/about">About</a></nav>
     <h1>Corgi facts</h1>
-    <p>Corgis are small herding dogs.</p>
+    <p>Corgis are small herding dogs. <a href="/breeds#pembroke">More</a></p>
     <ul><li>Short legs</li></ul>
     <img src="/corgi.jpg">
   </body>
@@ -82,11 +82,15 @@ async def test_crawler_extraction() -> None:
     page = await crawler.fetch("https://dogs.example.com/corgi")
 
     assert page.title == "Corgi facts"
-    # script/nav 등 보일러플레이트는 제거되어야 한다
+    # script/nav 등 보일러플레이트 '텍스트'는 제거되어야 한다
     assert "tracking" not in page.text
-    assert "Home | About" not in page.text
+    assert "About" not in page.text
     assert "Corgis are small herding dogs." in page.text
     assert "# Corgi facts" in page.markdown
     assert "- Short legs" in page.markdown
     assert page.image_urls == ("https://dogs.example.com/corgi.jpg",)
     assert page.favicon == "https://dogs.example.com/static/favicon.png"
+    # 링크는 보일러플레이트 제거 전에 수집되므로 nav 안의 링크도 포함되고,
+    # 프래그먼트(#pembroke)는 제거된 채 절대 URL로 정규화된다
+    assert "https://dogs.example.com/about" in page.links
+    assert "https://dogs.example.com/breeds" in page.links

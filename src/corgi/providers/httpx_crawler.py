@@ -5,7 +5,7 @@
 """
 
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from bs4 import BeautifulSoup, Tag
@@ -33,10 +33,16 @@ class HttpxCrawler:
 
     def _extract(self, url: str, html: str) -> CrawledPage:
         soup = BeautifulSoup(html, "html.parser")
+
+        # 링크/이미지/파비콘은 보일러플레이트 제거 '전'에 모은다.
+        # nav/footer에 든 내비게이션 링크가 크롤링에 필요하기 때문.
+        links = self._collect_links(soup, base_url=url)
+        images = self._collect_images(soup, base_url=url)
+        favicon = self._find_favicon(soup, base_url=url)
+        title = soup.title.get_text(strip=True) if soup.title else url
+
         for tag in soup(_STRIP_TAGS):
             tag.decompose()  # 트리에서 제거 (파괴적 연산)
-
-        title = soup.title.get_text(strip=True) if soup.title else url
         text = _BLANK_LINES.sub("\n\n", soup.get_text("\n", strip=True))
         markdown = self._to_markdown(soup, title)
         return CrawledPage(
@@ -44,8 +50,9 @@ class HttpxCrawler:
             title=title,
             text=text,
             markdown=markdown,
-            image_urls=self._collect_images(soup, base_url=url),
-            favicon=self._find_favicon(soup, base_url=url),
+            image_urls=images,
+            favicon=favicon,
+            links=links,
         )
 
     @staticmethod
@@ -66,6 +73,21 @@ class HttpxCrawler:
                 lines.append(content)
             lines.append("")
         return "\n".join(lines).strip()
+
+    @staticmethod
+    def _collect_links(soup: BeautifulSoup, *, base_url: str) -> tuple[str, ...]:
+        urls: list[str] = []
+        for anchor in soup.find_all("a"):
+            href = anchor.get("href")
+            if not isinstance(href, str) or not href:
+                continue
+            absolute = urljoin(base_url, href)
+            parsed = urlparse(absolute)
+            if parsed.scheme not in ("http", "https"):
+                continue
+            # 프래그먼트(#...)는 같은 문서이므로 제거해 중복 방문을 막는다
+            urls.append(absolute.split("#", 1)[0])
+        return tuple(dict.fromkeys(urls))
 
     @staticmethod
     def _collect_images(soup: BeautifulSoup, *, base_url: str) -> tuple[str, ...]:
