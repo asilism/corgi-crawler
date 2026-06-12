@@ -1,0 +1,52 @@
+[project]
+name = "corgi"
+version = "0.1.0"
+description = "Corgi — Tavily 호환 웹 검색/크롤링 API 서비스"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "httpx>=0.27",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    # 4.13부터 타입 힌트가 내장되어 별도 스텁 패키지가 필요 없음
+    "beautifulsoup4>=4.13",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/corgi"]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# E/F: pycodestyle/pyflakes, I: import 정렬(isort), UP: 최신 문법 권장,
+# B: 흔한 버그 패턴, SIM: 단순화, RUF: ruff 자체 규칙
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+strict = true
+python_version = "3.11"
+mypy_path = "src"
+packages = ["corgi"]
+plugins = ["pydantic.mypy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# async def 테스트를 데코레이터 없이 자동 인식
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
